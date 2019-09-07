@@ -9,12 +9,13 @@
 			font-family: 'Roboto', sans-serif;
 		}
 		table.catch-table{
-			
+			min-width: 814px;
 		}
 		table.catch-table thead tr th{
 			background-color: #0074d9;
 			color: #fff;
 			border-bottom: 3px solid #ffb700;
+			vertical-align: middle;
 		}
 		table.catch-table th, table.catch-table td{
 			padding: 8px 16px;
@@ -104,6 +105,7 @@
 		            							<td class="text-right">${ accounting.formatMoney(row.total, "AUD ", 2, ".", ",") }</td>
 		            							<td class="text-right">${ accounting.formatMoney(row.avgPrice, "AUD ", 2, ".", ",") }</td>
 		            							<td>${row.uniqueItem}</td>
+		            							<td>${row.totalQty}</td>
 		            							<td>${row.state}</td>
 		            						</tr>`;
 		            		}
@@ -122,10 +124,7 @@
 			getLocation: () => {
 
             	myApp.map = new google.maps.Map(
-                    document.getElementById('maps'),
-                    {
-                        zoom: 10
-                    }
+                    document.getElementById('maps')
                 );
 
 				var service = new google.maps.places.PlacesService(myApp.map);
@@ -151,22 +150,22 @@
 					    	}
 					    }
 					});
-					var catchOffice = myApp.createMarker({
-	            		lat: -37.908400,
-		      			lng: 145.061775,
-		      			name: "Catch Head Office",
-		      			req: { query: "Catch Head Office" }
-	            	});
                 }
 			},
 			createMarker: (newPlace) => {
 				myApp.place[newPlace.name] = new google.maps.LatLng({lat: newPlace.lat, lng: newPlace.lng}); 
 
+				var icon = {
+				    url: "{{ constant('App\\Controller\\MainController::BASE_URL') }}assets/shopping-bag.png",
+				    scaledSize: new google.maps.Size(20, 20)
+				};
+
 			  	myApp.marker[newPlace.name] = new google.maps.Marker({
                     position: myApp.place[newPlace.name], 
                     map: myApp.map,
                     optimized: false,
-                    title: newPlace.name
+                    title: newPlace.name,
+                    icon: icon
                 });
 
                 var nameUppercase = newPlace.name.toUpperCase();
@@ -227,39 +226,42 @@
 		<div class="row">
 			<div class="col-lg-9">
 				<div class="card">
-					<h3>catch.com.au test</h3>
-					
-					<table class="table catch-table" id="tableOrder">
-						<thead>
-							<tr>
-								<th>No.</th>
-								<th>Order ID</th>
-								<th>Date Time</th>
-								<th>Total Order Value</th>
-								<th>Avg Unit Price</th>
-								<th>Unit Count</th>
-								<th>Customer State</th>
-							</tr>
-						</thead>
-						<tbody>
-							
-						</tbody>
-					</table>
+					<h3 class="border-bottom mb-4">Order Summary</h3>
+					<div class="overflow-auto">
+						<table class="table catch-table" id="tableOrder">
+							<thead>
+								<tr>
+									<th>No.</th>
+									<th>Order ID</th>
+									<th>Date Time</th>
+									<th>Total Order Value</th>
+									<th>Avg Unit Price</th>
+									<th>Unit Count</th>
+									<th>Total Units</th>
+									<th>Customer State</th>
+								</tr>
+							</thead>
+							<tbody>
+								
+							</tbody>
+						</table>
+					</div>
 				</div>
 			</div>
 			<div class="col-lg-3">
 				<div class="card">
-					<h3 class="text-center border-bottom">Get Data</h3>
+					<h3 class="text-center border-bottom mb-4">Get Data</h3>
 					<button name="btnDownload" data-fmt="csv" class="btn btn-primary m-1">CSV</button>
 					<button name="btnDownload" data-fmt="csvvalidation" class="btn btn-primary m-1">CSV Validation</button>
 					<button name="btnDownload" data-fmt="xml" class="btn btn-primary m-1">XML</button>
 					<button name="btnDownload" data-fmt="json" class="btn btn-primary m-1">JSON</button>
 				</div>
 				<div class="card p-1">
+					<h3 class="text-center border-bottom mt-3">Order Map</h3>
+					<div class="text-center mb-1">click on the marker to see the number of orders.</div>
 					<div class="min-height-300" id="maps">
 					
 					</div>
-					<div class="text-center mt-2 pt-2 border-top">click on the marker to see the number of orders.</div>
 				</div>
 			</div>
 		</div>
