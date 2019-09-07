@@ -172,7 +172,7 @@
                 var nameUppercase = newPlace.name.toUpperCase();
 
                 myApp.infowindow[newPlace.name] = new google.maps.InfoWindow({
-				    content: newPlace.name + ( typeof myApp.listState[nameUppercase] != "undefined" ? " " + myApp.listState[nameUppercase] + " customer" : "")
+				    content: newPlace.name + ( typeof myApp.listState[nameUppercase] != "undefined" ? " " + myApp.listState[nameUppercase] + " orders" : "")
 				});
 
 				myApp.marker[newPlace.name].addListener('click', function() {
@@ -259,7 +259,7 @@
 					<div class="min-height-300" id="maps">
 					
 					</div>
-					<div class="text-center mt-2 pt-2 border-top">click on the marker to see the number of customer.</div>
+					<div class="text-center mt-2 pt-2 border-top">click on the marker to see the number of orders.</div>
 				</div>
 			</div>
 		</div>
