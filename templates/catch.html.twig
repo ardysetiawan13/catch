@@ -1,0 +1,268 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}catch{% endblock %}
+
+
+{% block stylesheets %}
+	<style type="text/css">
+		body{
+			font-family: 'Roboto', sans-serif;
+		}
+		table.catch-table{
+			
+		}
+		table.catch-table thead tr th{
+			background-color: #0074d9;
+			color: #fff;
+			border-bottom: 3px solid #ffb700;
+		}
+		table.catch-table th, table.catch-table td{
+			padding: 8px 16px;
+			text-align: center;
+		}
+		table.catch-table thead tr th:first-child{
+			border-top-left-radius: 8px;
+		}
+		table.catch-table thead tr th:last-child{
+			border-top-right-radius: 8px;
+		}
+		table.catch-table tbody tr:nth-child(even){
+			background-color: #fff;
+		}
+		table.catch-table tbody tr:nth-child(odd){
+			background-color: rgba(0,116,217,0.1);
+		}
+		.dataTables_wrapper .dataTables_paginate .paginate_button{
+			border: 0 !important;
+			background: transparent;
+			padding: 4px 12px;
+			border-radius: 8px;
+		}
+		.dataTables_wrapper .dataTables_paginate .paginate_button.current{
+			border: 0;
+			background: rgba(0,116,217,0.3) !important;
+		}
+		.dataTables_wrapper .dataTables_paginate .paginate_button:hover, .dataTables_wrapper .dataTables_paginate .paginate_button .current:hover{
+			color: #000000 !important;
+			font-size: 16px;
+			border: 0 !important;
+			background: rgba(0,116,217,0.3) !important;
+		}
+		.dataTables_length select{
+			border-radius: 8px;
+			margin-right: 16px;
+			padding: 2px 8px;
+		}
+		.dataTables_wrapper .dataTables_filter input{
+			border: 1px solid #ccc;
+			box-shadow: inset 0 1px 3px #F7F7F7;
+			padding: 2px 8px;
+			border-radius: 8px;
+		}
+		.card{
+			padding: 1.5rem;
+			box-shadow:  0px 3px 6px rgba(0,0,0,0.3);
+			border-radius: 8px;
+			margin: 16px 0px;
+		}
+		.min-height-300{
+			min-height: 300px;
+		}
+	</style>
+{% endblock %}
+
+{% block javascripts %}
+	<script type="text/javascript">
+		var myApp = {
+			map: null,
+			listState: {},
+			infowindow: {},
+			place: {},
+			marker: {},
+			loadData: () => {
+				$.ajax({            
+		            type: "GET",
+		            url: "{{ constant('App\\Controller\\MainController::BASE_URL') }}public/download?format=json",
+		            success: function(dataReturn){
+		            	if( Array.isArray(dataReturn) ){
+
+		            		var tbody = '';
+		            		for(let i=0; i<dataReturn.length; i++){
+		            			let row = dataReturn[i];
+		            			// count customer by state
+		            			if( typeof myApp.listState[row.state] == "undefined"){
+		            				myApp.listState[row.state] = 1;
+		            			}
+		            			else{
+		            				myApp.listState[row.state] += 1;
+		            			}
+		            			
+		            			tbody += `	<tr>
+		            							<td>${(i+1)}</td>
+		            							<td>${row.id}</td>
+		            							<td>${row.date}</td>
+		            							<td class="text-right">${ accounting.formatMoney(row.total, "AUD ", 2, ".", ",") }</td>
+		            							<td class="text-right">${ accounting.formatMoney(row.avgPrice, "AUD ", 2, ".", ",") }</td>
+		            							<td>${row.uniqueItem}</td>
+		            							<td>${row.state}</td>
+		            						</tr>`;
+		            		}
+							myApp.getLocation();
+		            	}
+		                
+						$("#tableOrder > tbody").html(tbody);
+						$("#tableOrder").DataTable();
+		            	
+		            },
+		            error: function(msg){
+		                alert("Some error occured, please try again later.")
+		            }
+		        });
+			},
+			getLocation: () => {
+
+            	myApp.map = new google.maps.Map(
+                    document.getElementById('maps'),
+                    {
+                        zoom: 10
+                    }
+                );
+
+				var service = new google.maps.places.PlacesService(myApp.map);
+                var bounds = new google.maps.LatLngBounds();
+                
+                for( var row in myApp.listState) {
+					var request = {
+					    query: row,
+					    fields: ['name', 'geometry']
+					 };
+                	service.findPlaceFromQuery(request, function(results, status) {
+					    if (status === google.maps.places.PlacesServiceStatus.OK) {
+					    	if ( results.length > 0 ){
+					    		let newPlace = myApp.createMarker({
+					      			lat: results[0].geometry.location.lat(),
+					      			lng: results[0].geometry.location.lng(),
+					      			name: results[0].name,
+					      			req: request
+					      		});	
+	                    		bounds.extend(newPlace);
+	                			myApp.map.fitBounds(bounds);
+
+					    	}
+					    }
+					});
+					var catchOffice = myApp.createMarker({
+	            		lat: -37.908400,
+		      			lng: 145.061775,
+		      			name: "Catch Head Office",
+		      			req: { query: "Catch Head Office" }
+	            	});
+                }
+			},
+			createMarker: (newPlace) => {
+				myApp.place[newPlace.name] = new google.maps.LatLng({lat: newPlace.lat, lng: newPlace.lng}); 
+
+			  	myApp.marker[newPlace.name] = new google.maps.Marker({
+                    position: myApp.place[newPlace.name], 
+                    map: myApp.map,
+                    optimized: false,
+                    title: newPlace.name
+                });
+
+                var nameUppercase = newPlace.name.toUpperCase();
+
+                myApp.infowindow[newPlace.name] = new google.maps.InfoWindow({
+				    content: newPlace.name + ( typeof myApp.listState[nameUppercase] != "undefined" ? " " + myApp.listState[nameUppercase] + " customer" : "")
+				});
+
+				myApp.marker[newPlace.name].addListener('click', function() {
+				    myApp.infowindow[newPlace.name].open(myApp.map, myApp.marker[newPlace.name]);
+				});
+
+                return myApp.place[newPlace.name];
+			},
+			download: (thisBtn) =>{
+				let format = $(thisBtn).data("fmt");
+				if(format == "csvvalidation"){
+					$(thisBtn).html("sending file to csvlint.io ...");
+					$.ajax({            
+			            type: "GET",
+			            url: "{{ constant('App\\Controller\\MainController::BASE_URL') }}public/download?format="+format,
+			            success: function(dataReturn){
+			            	if( typeof dataReturn.package.url != "undefined" ){
+			            		setTimeout( () =>{
+									window.open( dataReturn.package.url, "_blank");
+									$(thisBtn).html("CSV Validation");
+			            		},5000);
+			            	}
+			            	else{
+			            		alert("csv validation failed");
+								$(thisBtn).html("CSV Validation");
+
+			            	}
+
+			            }
+			       	});
+				}
+				else{
+					window.open( "{{ constant('App\\Controller\\MainController::BASE_URL') }}public/download?format="+ format , "_blank");
+				}
+			},
+			init: () => {
+				myApp.loadData();
+
+				$("button[name='btnDownload']").click( (e) => {
+					myApp.download( e.target );
+				});
+			}
+		}
+		$(document).ready( () => {
+			myApp.init();
+		});
+	</script>
+{% endblock %}
+
+{% block body %}
+	<div class="container-fluid p-3">
+		<div class="row">
+			<div class="col-lg-9">
+				<div class="card">
+					<h3>catch.com.au test</h3>
+					
+					<table class="table catch-table" id="tableOrder">
+						<thead>
+							<tr>
+								<th>No.</th>
+								<th>Order ID</th>
+								<th>Date Time</th>
+								<th>Total Order Value</th>
+								<th>Avg Unit Price</th>
+								<th>Unit Count</th>
+								<th>Customer State</th>
+							</tr>
+						</thead>
+						<tbody>
+							
+						</tbody>
+					</table>
+				</div>
+			</div>
+			<div class="col-lg-3">
+				<div class="card">
+					<h3 class="text-center border-bottom">Get Data</h3>
+					<button name="btnDownload" data-fmt="csv" class="btn btn-primary m-1">CSV</button>
+					<button name="btnDownload" data-fmt="csvvalidation" class="btn btn-primary m-1">CSV Validation</button>
+					<button name="btnDownload" data-fmt="xml" class="btn btn-primary m-1">XML</button>
+					<button name="btnDownload" data-fmt="json" class="btn btn-primary m-1">JSON</button>
+				</div>
+				<div class="card p-1">
+					<div class="min-height-300" id="maps">
+					
+					</div>
+					<div class="text-center mt-2 pt-2 border-top">click on the marker to see the number of customer.</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+{% endblock %}
