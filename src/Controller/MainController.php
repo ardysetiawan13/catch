@@ -21,7 +21,7 @@ use \DOMDocument;
 use \CurlFile;
 
 class MainController extends Controller{
-// 	const BASE_URL = "http://localhost/belajar/symfony/catch/";
+	//const BASE_URL = "http://localhost/belajar/symfony/catch/";
 	const BASE_URL = "http://catch.ardysetiawan.id/";
 	private $rootDir;
 
