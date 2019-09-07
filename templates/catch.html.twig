@@ -133,7 +133,7 @@
                 
                 for( var row in myApp.listState) {
 					var request = {
-					    query: row,
+					    query: row + ", Australia",
 					    fields: ['name', 'geometry']
 					 };
                 	service.findPlaceFromQuery(request, function(results, status) {
